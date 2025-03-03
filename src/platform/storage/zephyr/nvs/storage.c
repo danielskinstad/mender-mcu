@@ -26,6 +26,8 @@
 #include "log.h"
 #include "storage.h"
 
+#include <mender/mac_address.h>
+
 /**
  * @brief NVS storage
  */
@@ -41,6 +43,7 @@
 #define MENDER_STORAGE_NVS_DEPLOYMENT_DATA 3
 #define MENDER_STORAGE_NVS_PROVIDES        4
 #define MENDER_STORAGE_NVS_ARTICACT_NAME   5
+#define MENDER_STORAGE_NVS_MAC_ADDRESS     6
 
 /**
  * @brief Cached Artifact name
@@ -395,6 +398,38 @@ mender_storage_get_artifact_name(const char **artifact_name) {
     }
 
     return ret;
+}
+
+mender_err_t
+mender_storage_set_mac_address(const char *mac_address) {
+
+    assert(NULL != mac_address);
+
+    if (!checked_nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_MAC_ADDRESS, mac_address, strlen(mac_address) + 1)) {
+        mender_log_error("Unable to write mac_address");
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_storage_get_mac_address(char **mac_address) {
+
+    assert(NULL != mac_address);
+    size_t mac_address_length = 0;
+
+    mender_err_t ret = nvs_read_alloc(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_MAC_ADDRESS, (void **)mac_address, &mac_address_length);
+    if (MENDER_OK != ret) {
+        if (MENDER_NOT_FOUND == ret) {
+            mender_log_debug("Mac address not available");
+        } else {
+            mender_log_error("Unable to read mac address");
+        }
+        return ret;
+    }
+
+    return MENDER_OK;
 }
 
 mender_err_t
