@@ -558,6 +558,18 @@ if MENDER_MCU_CLIENT
                 help
                     The number of iterations to wait for a reboot.
 
+            config MENDER_NETWORK_ERROR_BACKOFF
+                int "Backoff interval on network errors (seconds)"
+                default 60
+                help
+                    Lorem ipsum dolor sit amet et cetera
+
+            config MENDER_NETWORK_ERROR_MAX_BACKOFF
+                int "Maximum bckoff on network errors (seconds)"
+                default 540
+                help
+                    Lorem ipsum dolor sit amet et cetera
+
         endmenu
 
     endmenu

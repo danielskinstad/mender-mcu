@@ -95,8 +95,11 @@ mender_os_scheduler_work_create(mender_os_scheduler_work_params_t *work_params, 
     }
 
     /* Copy work parameters */
-    work_context->params.function = work_params->function;
-    work_context->params.period   = work_params->period;
+    work_context->params.function             = work_params->function;
+    work_context->params.period               = work_params->period;
+    work_context->params.backoff.interval     = work_params->backoff.interval;
+    work_context->params.backoff.max_interval = work_params->backoff.max_interval;
+
     if (NULL == (work_context->params.name = mender_utils_strdup(work_params->name))) {
         mender_log_error("Unable to allocate memory");
         goto FAIL;
@@ -222,6 +225,8 @@ mender_os_scheduler_work_handler(struct k_work *work_item) {
         return;
     }
 
+    uint32_t period = work->params.period;
+
     /* Call work function */
     mender_log_debug("Executing %s work", work->params.name);
     if (MENDER_DONE == (ret = work->params.function())) {
@@ -229,14 +234,24 @@ mender_os_scheduler_work_handler(struct k_work *work_item) {
         return;
     }
     if (MENDER_OK != ret) {
-        mender_log_error("Work %s failed", work->params.name);
+        if (MENDER_NET_ERROR == ret) {
+            mender_log_error("Net error detected, retrying with backoff");
+            uint32_t next_backoff_interval = work->params.backoff.interval * 2;
+            if (next_backoff_interval >= work->params.backoff.max_interval) {
+                work->params.backoff.interval = work->params.backoff.max_interval;
+            } else {
+                work->params.backoff.interval = next_backoff_interval;
+            }
+            period = work->params.backoff.interval;
+        }
+        mender_log_error("Work %s failed, retrying in %u seconds", work->params.name, period);
     }
 
     /* Reschedule self for the next period */
 #ifdef CONFIG_MENDER_SCHEDULER_SEPARATE_WORK_QUEUE
-    k_work_reschedule_for_queue(&work_queue, delayable_item, K_SECONDS(work->params.period));
+    k_work_reschedule_for_queue(&work_queue, delayable_item, K_SECONDS(period));
 #else
-    k_work_reschedule(delayable_item, K_SECONDS(work->params.period));
+    k_work_reschedule(delayable_item, K_SECONDS(period));
 #endif /* CONFIG_MENDER_SCHEDULER_SEPARATE_WORK_QUEUE */
 }
 

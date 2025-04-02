@@ -31,9 +31,11 @@ extern "C" {
  * @brief Initialize mender inventory
  * @param interval The interval to perform inventory updates at
  * @param device_type Device type
+ * @param backoff_interval Backoff interval on net errors
+ * @param max_backoff_interval Max backoff interval on net errors
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_inventory_init(uint32_t interval, const char *device_type);
+mender_err_t mender_inventory_init(uint32_t interval, const char *dev_type, uint32_t backoff_interval, uint32_t max_backoff_interval);
 
 /**
  * @brief Reset persistent inventory
