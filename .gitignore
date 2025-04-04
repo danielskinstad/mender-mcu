@@ -23,3 +23,6 @@ tests/unit/reports
 # It is possible to disable it, although I'm guessing most macOS users don't
 # want to do that. Hence, we'll do them a service and list it here.
 .DS_Store
+
+compile_commands.json
+.cache/
